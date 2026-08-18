@@ -332,6 +332,7 @@
     </footer>
 
     <script>
+let postcardData = []; 
  // 1. 宣告一個全域變數，用來存放從雲端抓下來的即時資料
 postcardData = [];
 
@@ -534,7 +535,6 @@ window.addEventListener('DOMContentLoaded', () => {
         })
         .then(rawRows => {
             // 每次抓資料前先清空陣列，徹底斷絕重複 Bug
-            postcardData = []; 
             
             for (let i = 1; i < rawRows.length; i++) {
                 const row = rawRows[i];
