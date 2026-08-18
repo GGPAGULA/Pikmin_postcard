@@ -284,7 +284,7 @@
 
             <!-- Hashtag 篩選 -->
             <select id="tagFilter" class="filter-select" onchange="filterAndRender()">
-                <option value="all">🏷️#Hashtag</option>
+                <option value="all">🏷️ #Hashtag</option>
             </select>
 
             <!-- 整合後的顯示排序 -->
@@ -338,8 +338,8 @@ window.addEventListener('DOMContentLoaded', () => {
                     hashtags: row[5] ? row[5].split(',').map(t => t.trim()) : [], // F欄: 用逗號拆開標籤
                     beautyScore: Number(row[6]) || 1, // G欄: 美片程度
                     hideScore: Number(row[7]) || 1,   // H欄: 隱菇程度
-                    image: row[8] || 'https://placehold.co' // I欄: 明信片網址
-                });
+                    image: row[8] ? row[8].replace('open?id=', 'uc?export=view&id=').replace('file/d/', 'uc?export=view&id=').replace('/view?usp=drivesdk', '') : 'https://placehold.co'
+});
             }
 
             console.log("成功從 Google Sheet 載入即時資料：", postcardData);
@@ -359,8 +359,8 @@ function initFilters() {
     const tagSelect = document.getElementById('tagFilter');
     
     // 💡 關鍵：這裡的預設選項 value 一定要寫 "all"
-    geoSelect.innerHTML = '<option value="all">🌍 所有地區</option>';
-    tagSelect.innerHTML = '<option value="all">🏷️ 所有 Hashtag</option>';
+    geoSelect.innerHTML = '<option value="all">🌍 地區</option>';
+    tagSelect.innerHTML = '<option value="all">🏷️ #Hashtag</option>';
     
     const geos = new Set();
     const tags = new Set();
