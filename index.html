@@ -467,33 +467,42 @@ function initFilters() {
                 if(item.type === '菇點') badgeClass = 'type-mushroom';
                 if(item.type === '花點') badgeClass = 'type-flower';
 
-                const cardHTML = `
-                    <div class="postcard-card">
-                        <div class="pin">📌</div>
-                        <div class="card-image-wrapper">
-                            <img class="card-image" src="${item.image}" alt="明信片">
-                        </div>
-                        <div class="card-content">
-                            <div class="card-meta-row">
-                                <span class="type-badge ${badgeClass}">${item.type}</span>
-                                <span class="author-geo">${item.geo} • ${item.author}</span>
-                            </div>
-                            
-                            <div class="coords-capsule" onclick="copyCoords('${item.coords}')">
-                                <span class="icon-pin">📍</span>
-                                <span class="coords-text">${item.coords}</span>
-                                <span class="icon-copy">📋</span>
-                            </div>
+// 💡 請在 filterAndRender() 的 gallery.innerHTML 結構中，將 <img> 標籤修改為：
 
-                            <div class="hashtag-text">${item.hashtags ? item.hashtags.join(' ') : ''}</div>
-                            
-                            <div class="scores-row">
-                                <div class="score-item">🍄 隱菇: ${item.hideScore}</div>
-                                <div class="score-item">✨ 美菇: ${item.beautyScore}</div>
-                            </div>
-                        </div>
-                    </div>
-                `;
+const cardHTML = `
+    <div class="postcard-card">
+        <div class="pin">📌</div>
+        <div class="card-image-wrapper">
+            <!-- 🎯 升級核心：加上 loading="lazy"（滑到才載入）與 decoding="async"（非同步解碼圖片） -->
+            <img class="card-image" 
+                 src="${item.image}" 
+                 alt="明信片" 
+                 loading="lazy" 
+                 decoding="async"
+                 onerror="this.src='https://placehold.co'">
+        </div>
+        <div class="card-content">
+            <div class="card-meta-row">
+                <span class="type-badge ${badgeClass}">${item.type}</span>
+                <span class="author-geo">${item.geo} • ${item.author}</span>
+            </div>
+            
+            <div class="coords-capsule" onclick="copyCoords('${item.coords}')">
+                <span class="icon-pin">📍</span>
+                <span class="coords-text">${item.coords}</span>
+                <span class="icon-copy">📋</span>
+            </div>
+
+            <div class="hashtag-text">${item.hashtags ? item.hashtags.join(' ') : ''}</div>
+            
+            <div class="scores-row">
+                <div class="score-item">🍄 隱菇: ${item.hideScore}</div>
+                <div class="score-item">✨ 美菇: ${item.beautyScore}</div>
+            </div>
+        </div>
+    </div>
+`;
+
                 gallery.innerHTML += cardHTML;
             });
         }
@@ -540,15 +549,7 @@ function initFilters() {
             hashtags: row[5] ? row[5].split(',').map(t => t.trim()) : [], // item.hashtags
             beautyScore: Number(row[6]) || 1, 
             hideScore: Number(row[7]) || 1,   
-            image: (() => {
-              if (!row[8]) return 'https://placehold.co';
-              const match = row[8].match(/[-\w]{25,}/);
-              if (match && match[0]) {
-                // 🎯 成功繞過手機阻擋的隱藏直連格式
-                return `https://script.google.com/macros/s/AKfycbzX2gywI_rA3M6mZjOPXhRYPOI1NE0aQQclST4FY_nFEde_eZTget6TXKMXpuHl3C6j/exec{match[0]}`;
-              }
-              return row[8];
-            })() // 括號閉合正確
+            image: row[9] || 'https://placehold.co'
           });
         } // for 迴圈結束
 
