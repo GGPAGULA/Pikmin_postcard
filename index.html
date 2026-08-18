@@ -346,7 +346,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
             // 4. 資料安全抓到了！現在啟動你原本寫好的初始化選單與卡片渲染
             initFilters();
-            renderCards(postcardData); // 這裡請對照你原本程式碼中負責「畫出卡片」的 function 名稱
+            filterAndRender(); // 這裡請對照你原本程式碼中負責「畫出卡片」的 function 名稱
         })
         .catch(error => {
             console.error('抓取資料失敗:', error);
@@ -519,7 +519,13 @@ function initFilters() {
             hashtags: row[5] ? row[5].split(',').map(t => t.trim()) : [], // item.hashtags
             beautyScore: Number(row[6]) || 1, 
             hideScore: Number(row[7]) || 1,   
-            image: row[8] || 'https://placehold.co' // item.image
+			image: (() => {
+   				 if (!row[8]) return 'https://placehold.co';
+   				 const match = row[8].match(/[-\w]{25,}/);
+    			if (match && match[0]) {
+  		   		   return `https://google.com{match[0]}`;
+  				  }
+  			  return row[8];
           });
         }
 
