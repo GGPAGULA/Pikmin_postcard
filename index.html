@@ -336,7 +336,7 @@
 let postcardData = [];
 
 // 2. 你的 Google Sheet 轉接網址
-const gasUrl = 'https://script.google.com/macros/s/AKfycbw1Nw1-HgRxoL3sZzsUTwFnha9KP2fCiAe655DdUMDlWP68B_WkLxL01qXmsv9wLngJ/exec';
+const gasUrl = 'https://script.google.com/macros/s/AKfycbzX2gywI_rA3M6mZjOPXhRYPOI1NE0aQQclST4FY_nFEde_eZTget6TXKMXpuHl3C6j/exec';
 
 // 3. 當網頁一打開，立刻去抓取 Google Sheet 資料
 window.addEventListener('DOMContentLoaded', () => {
@@ -507,7 +507,7 @@ function initFilters() {
   // ==================== 解決首頁空白與排序問題的最終版 ====================
 
   // 1. 你的 Google Sheet 轉接網址
-  const googleSheetUrl = 'https://script.google.com/macros/s/AKfycbw1Nw1-HgRxoL3sZzsUTwFnha9KP2fCiAe655DdUMDlWP68B_WkLxL01qXmsv9wLngJ/exec';
+  const googleSheetUrl = 'https://script.google.com/macros/s/AKfycbzX2gywI_rA3M6mZjOPXhRYPOI1NE0aQQclST4FY_nFEde_eZTget6TXKMXpuHl3C6j/exec';
 
   // 2. 網頁開啟時，自動執行串接
   window.addEventListener('DOMContentLoaded', () => {
@@ -545,7 +545,7 @@ function initFilters() {
               const match = row[8].match(/[-\w]{25,}/);
               if (match && match[0]) {
                 // 🎯 成功繞過手機阻擋的隱藏直連格式
-                return `https://script.google.com/macros/s/AKfycbw1Nw1-HgRxoL3sZzsUTwFnha9KP2fCiAe655DdUMDlWP68B_WkLxL01qXmsv9wLngJ/exec{match[0]}`;
+                return `https://script.google.com/macros/s/AKfycbzX2gywI_rA3M6mZjOPXhRYPOI1NE0aQQclST4FY_nFEde_eZTget6TXKMXpuHl3C6j/exec{match[0]}`;
               }
               return row[8];
             })() // 括號閉合正確
