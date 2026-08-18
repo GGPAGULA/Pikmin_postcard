@@ -271,12 +271,12 @@
         <div class="filter-container">
             <!-- 地區篩選 -->
             <select id="geoFilter" class="filter-select" onchange="filterAndRender()">
-                <option value="all">🌍 所有地區</option>
+                <option value="all">🌍 地區</option>
             </select>
 
             <!-- 類別篩選 -->
             <select id="typeFilter" class="filter-select" onchange="filterAndRender()">
-                <option value="all">🔍 所有類別</option>
+                <option value="all">🔍 類別</option>
                 <option value="菇點">菇點</option>
                 <option value="花點">花點</option>
                 <option value="探測器">探測器</option>
@@ -284,17 +284,17 @@
 
             <!-- Hashtag 篩選 -->
             <select id="tagFilter" class="filter-select" onchange="filterAndRender()">
-                <option value="all">🏷️ 所有 Hashtag</option>
+                <option value="all">🏷️#Hashtag</option>
             </select>
 
             <!-- 整合後的顯示排序 -->
             <select id="displaySort" class="filter-select" onchange="filterAndRender()">
-                <option value="time-desc">⏱️ 時間排序 (新到舊)</option>
-                <option value="time-asc">⏱️ 時間排序 (舊到新)</option>
-                <option value="hide-asc">🍄 隱菇程度 (1 - 3)</option>
-                <option value="hide-desc">🍄 隱菇程度 (3 - 1)</option>
-                <option value="beauty-asc">✨ 美菇程度 (1 - 3)</option>
-                <option value="beauty-desc">✨ 美菇程度 (3 - 1)</option>
+                <option value="time-desc">⏱️ 時間新到舊</option>
+                <option value="time-asc">⏱️ 時間舊到新</option>
+                <option value="hide-asc">🍄 隱菇程度1-3</option>
+                <option value="hide-desc">🍄 隱菇程度3-1</option>
+                <option value="beauty-asc">✨ 美菇程度1-3</option>
+                <option value="beauty-desc">✨ 美菇程度3-1</option>
             </select>
         </div>
     </header>
@@ -303,11 +303,11 @@
     <main class="gallery-container" id="gallery"></main>
 
     <!-- 一鍵複製提示框 -->
-    <div class="toast-msg" id="toast">📋 座標已成功複製！</div>
+    <div class="toast-msg" id="toast">📋座標成功複製</div>
 
     <!-- 頁尾製作資訊 -->
     <footer>
-        Genny手搓大師美片倉庫 © 2026
+        Gennyouknow © 2026
     </footer>
 
     <script>
