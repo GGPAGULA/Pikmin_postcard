@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PAGULA美片倉庫</title>
+    <style>
+        /* 全域樣式：復刻皮克敏粉藍色微網格草地背景 */
+        body {
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+            background-color: #5ec7ca;
+            background-image: 
+                radial-gradient(rgba(255,255,255,0.15) 15%, transparent 20%),
+                radial-gradient(rgba(255,255,255,0.1) 15%, transparent 20%);
+            background-size: 30px 30px;
+            background-position: 0 0, 15px 15px;
+            margin: 0;
+            padding: 0;
+            color: #4a4a4a;
+        }
+
+        /* 頂部導覽列 (Head Bar) */
+        header {
+            background-color: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            padding: 15px 30px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 4px solid #f4e8c1;
+            border-radius: 0 0 20px 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* 左上角大標題與皮克敏嫩芽裝飾 */
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .logo-area h1 {
+            margin: 0;
+            font-size: 24px;
+            color: #2b7a78;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-shadow: 1px 1px 0px #fff;
+        }
+        .logo-area .sprout {
+            font-size: 22px;
+        }
+
+        /* 篩選與排序區塊 */
+        .filter-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .filter-select {
+            background-color: #ffffff;
+            border: 2px solid #bcdbdc;
+            border-radius: 30px;
+            padding: 8px 16px;
+            font-size: 14px;
+            color: #4a4a4a;
+            outline: none;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: all 0.2s ease;
+        }
+
+        .filter-select:hover {
+            border-color: #3aa6a3;
+            transform: translateY(-1px);
+        }
+
+        /* 主要畫廊區塊 */
+        .gallery-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 35px;
+        }
+
+        /* 手繪感明信片紙張卡片樣式 */
+        .postcard-card {
+            background: #fdfbf7; /* 溫慢微黃手繪紙張底色 */
+            border-radius: 24px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+            overflow: visible; /* 讓大頭針可以突出來 */
+            position: relative;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .postcard-card:hover {
+            transform: translateY(-8px) rotate(0.5deg);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.18);
+        }
+
+        /* 正中央立體紅色大頭針 */
+        .pin {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+            z-index: 10;
+            filter: drop-shadow(2px 3px 2px rgba(0,0,0,0.2));
+        }
+
+        /* 明信片圖片區塊 */
+        .card-image-wrapper {
+            width: 100%;
+            height: 200px;
+            overflow: hidden;
+            border-radius: 24px 24px 0 0;
+            position: relative;
+            background-color: #e0e0e0;
+        }
+
+        .card-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* 卡片文字與資訊內容區 */
+        .card-content {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex-grow: 1;
+        }
+
+        /* 類別標籤與地區上傳者行 */
+        .card-meta-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* 皮克敏遊戲風格標籤配色 */
+        .type-badge {
+            border-radius: 20px;
+            padding: 4px 14px;
+            font-size: 13px;
+            font-weight: bold;
+            color: #ffffff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .type-mushroom { background-color: #ff5959; } /* 菇點：熱情紅 */
+        .type-flower { background-color: #ff9233; }   /* 花點：亮麗橘黃 */
+        .type-detector { background-color: #4da6ff; } /* 探測器：水藍色 */
+
+        .author-geo {
+            font-size: 13px;
+            color: #8c9696;
+            font-weight: 500;
+        }
+
+        /* 獨立出來的極簡膠囊風複製座標 */
+        .coords-capsule {
+            background-color: #f4e8c1;
+            border: 1px solid #e1d3a5;
+            border-radius: 50px;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin: 4px 0;
+        }
+
+        .coords-capsule:hover {
+            background-color: #ede0b4;
+            transform: scale(1.02);
+        }
+
+        .coords-text {
+            font-size: 14px;
+            font-weight: bold;
+            color: #5c5236;
+            letter-spacing: 0.5px;
+        }
+
+        .icon-pin { font-size: 14px; }
+        .icon-copy { font-size: 14px; color: #a3966c; }
+
+        /* 標籤、隱菇與美菇欄位 */
+        .hashtag-text {
+            color: #1b8a5a;
+            font-weight: bold;
+            font-size: 14px;
+            margin: 2px 0;
+        }
+
+        .scores-row {
+            display: flex;
+            gap: 15px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #555;
+            border-top: 1px dashed #e0dcd3;
+            padding-top: 10px;
+            margin-top: auto;
+        }
+
+        .score-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* 彈出提示泡泡特效 */
+        .toast-msg {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background-color: rgba(43, 122, 120, 0.95);
+            color: #ffffff;
+            padding: 12px 28px;
+            border-radius: 50px;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 2000;
+            pointer-events: none;
+        }
+        .toast-msg.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* 頁尾製作資訊 */
+        footer {
+            text-align: center;
+            padding: 30px 20px;
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 14px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            margin-top: 50px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 頂部導覽列 (Head Bar) -->
+    <header>
+        <div class="logo-area">
+            <span class="sprout">🌱</span>
+            <h1>PAGULA美片倉庫</h1>
+        </div>
+        
+        <div class="filter-container">
+            <!-- 地區篩選 -->
+            <select id="geoFilter" class="filter-select" onchange="filterAndRender()">
+                <option value="all">🌍 所有地區</option>
+            </select>
+
+            <!-- 類別篩選 -->
+            <select id="typeFilter" class="filter-select" onchange="filterAndRender()">
+                <option value="all">🔍 所有類別</option>
+                <option value="菇點">菇點</option>
+                <option value="花點">花點</option>
+                <option value="探測器">探測器</option>
+            </select>
+
+            <!-- Hashtag 篩選 -->
+            <select id="tagFilter" class="filter-select" onchange="filterAndRender()">
+                <option value="all">🏷️ 所有 Hashtag</option>
+            </select>
+
+            <!-- 整合後的顯示排序 -->
+            <select id="displaySort" class="filter-select" onchange="filterAndRender()">
+                <option value="time-desc">⏱️ 時間排序 (新到舊)</option>
+                <option value="time-asc">⏱️ 時間排序 (舊到新)</option>
+                <option value="hide-asc">🍄 隱菇程度 (1 - 3)</option>
+                <option value="hide-desc">🍄 隱菇程度 (3 - 1)</option>
+                <option value="beauty-asc">✨ 美菇程度 (1 - 3)</option>
+                <option value="beauty-desc">✨ 美菇程度 (3 - 1)</option>
+            </select>
+        </div>
+    </header>
+
+    <!-- 主畫面卡片畫廊 -->
+    <main class="gallery-container" id="gallery"></main>
+
+    <!-- 一鍵複製提示框 -->
+    <div class="toast-msg" id="toast">📋 座標已成功複製！</div>
+
+    <!-- 頁尾製作資訊 -->
+    <footer>
+        Genny手搓大師美片倉庫 © 2026
+    </footer>
+
+    <script>
+ // 1. 宣告一個全域變數，用來存放從雲端抓下來的即時資料
+let postcardData = [];
+
+// 2. 你的 Google Sheet 轉接網址
+const gasUrl = 'https://script.google.com/macros/s/AKfycbwI8p-8741H0duKl4Tcvfz9cfbhgAhrHbmdyAtAWJFOsa4Tivnw8ZZDBcTWIJSdM5iu/exec';
+
+// 3. 當網頁一打開，立刻去抓取 Google Sheet 資料
+window.addEventListener('DOMContentLoaded', () => {
+    fetch(gasUrl)
+        .then(response => response.json())
+        .then(rawRows => {
+            // rawRows[0] 是試算表的標題列，我們從 i = 1 開始抓取每一列真正的明信片
+            for (let i = 1; i < rawRows.length; i++) {
+                const row = rawRows[i];
+                if (!row[1] && !row[2]) continue; // 略過空白行
+
+                // 將 Google Sheet 的各個欄位，對應成你的網頁欄位名稱
+                postcardData.push({
+                    id: i,
+                    timestamp: row[0],   // A欄: 時間戳記
+                    type: row[1],        // B欄: 類別 (菇點/花點/探測器)
+                    author: row[2],      // C欄: 上傳者
+                    coords: row[3],      // D欄: 座標
+                    geo: row[4],         // E欄: 地區
+                    hashtags: row[5] ? row[5].split(',').map(t => t.trim()) : [], // F欄: 用逗號拆開標籤
+                    beautyScore: Number(row[6]) || 1, // G欄: 美片程度
+                    hideScore: Number(row[7]) || 1,   // H欄: 隱菇程度
+                    image: row[8] || 'https://placehold.co' // I欄: 明信片網址
+                });
+            }
+
+            console.log("成功從 Google Sheet 載入即時資料：", postcardData);
+
+            // 4. 資料安全抓到了！現在啟動你原本寫好的初始化選單與卡片渲染
+            initFilters();
+            renderCards(postcardData); // 這裡請對照你原本程式碼中負責「畫出卡片」的 function 名稱
+        })
+        .catch(error => {
+            console.error('抓取資料失敗:', error);
+        });
+});
+
+// 動態初始化下拉選單選項 (地區與 Hashtag) - 維持你原本的邏輯
+function initFilters() {
+    const geoSelect = document.getElementById('geoFilter');
+    const tagSelect = document.getElementById('tagFilter');
+    
+    // 清空原本寫死的預設選項（保留第一個"所有地區"和"所有Hashtag"即可）
+    geoSelect.innerHTML = '<option value="">🌍 所有地區</option>';
+    tagSelect.innerHTML = '<option value="">🏷 所有 Hashtag</option>';
+    
+    const geos = new Set();
+    const tags = new Set();
+
+    postcardData.forEach(item => {
+        if(item.geo) geos.add(item.geo);
+        if(item.hashtags) item.hashtags.forEach(t => tags.add(t));
+    });
+
+    geos.forEach(geo => {
+        const opt = document.createElement('option');
+        opt.value = geo;
+        opt.textContent = geo;
+        geoSelect.appendChild(opt);
+    });
+
+    tags.forEach(tag => {
+        const opt = document.createElement('option');
+        opt.value = tag;
+        opt.textContent = tag;
+        tagSelect.appendChild(opt);
+    });
+}
+
+        // 複製座標至剪貼簿的功能
+        function copyCoords(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const toast = document.getElementById('toast');
+                toast.classList.add('show');
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 2000);
+            });
+        }
+
+        // 主要篩選、排序與渲染邏輯
+        function filterAndRender() {
+            const geoValue = document.getElementById('geoFilter').value;
+            const typeValue = document.getElementById('typeFilter').value;
+            const tagValue = document.getElementById('tagFilter').value;
+            const sortValue = document.getElementById('displaySort').value;
+
+            // 1. 篩選資料
+            let filtered = postcardData.filter(item => {
+                const matchGeo = (geoValue === 'all' || item.geo === geoValue);
+                const matchType = (typeValue === 'all' || item.type === typeValue);
+                const matchTag = (tagValue === 'all' || (item.hashtags && item.hashtags.includes(tagValue)));
+                return matchGeo && matchType && matchTag;
+            });
+
+            // 2. 執行排序
+            filtered.sort((a, b) => {
+                // 為了安全解析中文格式的日期，轉化為標準判斷或回退
+                let dateA = new Date(a.timestamp.replace("下午", "PM").replace("上午", "AM"));
+                let dateB = new Date(b.timestamp.replace("下午", "PM").replace("上午", "AM"));
+                if (isNaN(dateA)) dateA = new Date(a.timestamp);
+                if (isNaN(dateB)) dateB = new Date(b.timestamp);
+
+                if (sortValue === 'time-desc') {
+                    return dateB - dateA; // 新到舊 (預設)
+                } else if (sortValue === 'time-asc') {
+                    return dateA - dateB; // 舊到新
+                } else if (sortValue === 'hide-asc') {
+                    return a.hideScore - b.hideScore; // 隱菇 1-3
+                } else if (sortValue === 'hide-desc') {
+                    return b.hideScore - a.hideScore; // 隱菇 3-1
+                } else if (sortValue === 'beauty-asc') {
+                    return a.beautyScore - b.beautyScore; // 美菇 1-3
+                } else if (sortValue === 'beauty-desc') {
+                    return b.beautyScore - a.beautyScore; // 美菇 3-1
+                }
+                return 0;
+            });
+
+            // 3. 渲染至畫面上
+            const gallery = document.getElementById('gallery');
+            gallery.innerHTML = '';
+
+            filtered.forEach(item => {
+                // 根據類別給予對應的 CSS class
+                let badgeClass = 'type-detector';
+                if(item.type === '菇點') badgeClass = 'type-mushroom';
+                if(item.type === '花點') badgeClass = 'type-flower';
+
+                const cardHTML = `
+                    <div class="postcard-card">
+                        <div class="pin">📌</div>
+                        <div class="card-image-wrapper">
+                            <img class="card-image" src="${item.image}" alt="明信片">
+                        </div>
+                        <div class="card-content">
+                            <div class="card-meta-row">
+                                <span class="type-badge ${badgeClass}">${item.type}</span>
+                                <span class="author-geo">${item.geo} • ${item.author}</span>
+                            </div>
+                            
+                            <div class="coords-capsule" onclick="copyCoords('${item.coords}')">
+                                <span class="icon-pin">📍</span>
+                                <span class="coords-text">${item.coords}</span>
+                                <span class="icon-copy">📋</span>
+                            </div>
+
+                            <div class="hashtag-text">${item.hashtags ? item.hashtags.join(' ') : ''}</div>
+                            
+                            <div class="scores-row">
+                                <div class="score-item">🍄 隱菇: ${item.hideScore}</div>
+                                <div class="score-item">✨ 美菇: ${item.beautyScore}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                gallery.innerHTML += cardHTML;
+            });
+        }
+
+        // 網頁載入時初始化
+        window.onload = function() {
+            initFilters();
+            filterAndRender(); // 預設依據最新時間排序並完整顯示
+        };
+
+  // 1. 這就是你的 Google Sheet 轉接網址
+  const googleSheetUrl = 'https://script.google.com/macros/s/AKfycbwI8p-8741H0duKl4Tcvfz9cfbhgAhrHbmdyAtAWJFOsa4Tivnw8ZZDBcTWIJSdM5iu/exec';
+
+  // 2. 網頁開啟時，自動執行串接
+  window.addEventListener('DOMContentLoaded', () => {
+    fetch(googleSheetUrl)
+      .then(response => response.json())
+      .then(rawRows => {
+        // 成功抓到資料，將資料轉換為前端物件
+        const postcards = [];
+        for (let i = 1; i < rawRows.length; i++) {
+          const row = rawRows[i];
+          if (!row[1] && !row[2]) continue; // 略過空白列
+
+          postcards.push({
+            timestamp: row[0],
+            category: row[1],
+            uploader: row[2],
+            coordinates: row[3],
+            region: row[4],
+            hashtag: row[5] ? row[5].split(',') : [],
+            score1: row[6],
+            score2: row[7],
+            fileUrl: row[8]
+          });
+        }
+
+        // 3. 在瀏覽器 Console 查看是否成功抓到
+        console.log("成功自動串接 Google Sheet 資料：", postcards);
+
+        // TODO: 在這裡編寫動態渲染邏輯，將 postcards 資料塞入你的 HTML 卡片結構中
+      })
+      .catch(error => {
+        console.error('串接失敗，請檢查網址或權限：', error);
+      });
+  });
+</script>
+	
+	
+</body>
+</html>
