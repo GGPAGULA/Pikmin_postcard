@@ -483,7 +483,9 @@ function initFilters() {
             filterAndRender(); // 預設依據最新時間排序並完整顯示
         };
 
- // 1. 你的 Google Sheet 轉接網址
+  // ==================== 解決首頁空白與排序問題的最終版 ====================
+
+  // 1. 你的 Google Sheet 轉接網址
   const googleSheetUrl = 'https://google.com';
 
   // 2. 網頁開啟時，自動執行串接
@@ -509,11 +511,11 @@ function initFilters() {
           // 欄位名稱精準對接你的 filterAndRender()
           postcardData.push({
             id: i,
-            timestamp: row[0],
-            type: row[1],        // item.type
-            author: row[2],      // item.author
-            coords: row[3],      // item.coords
-            geo: row[4],         // item.geo
+            timestamp: row[0], // 時間戳記
+            type: row[1],      // item.type
+            author: row[2],    // item.author
+            coords: row[3],    // item.coords
+            geo: row[4],       // item.geo
             hashtags: row[5] ? row[5].split(',').map(t => t.trim()) : [], // item.hashtags
             beautyScore: Number(row[6]) || 1, 
             hideScore: Number(row[7]) || 1,   
@@ -523,8 +525,14 @@ function initFilters() {
 
         console.log("成功自動串接 Google Sheet 資料並轉換完成：", postcardData);
 
-        // 💡 關鍵順序：資料確保到齊後，才開始初始化選單並渲染畫面
+        // 💡 修正一：先初始化下拉選單（這步一定要在前面，畫面才拿得到預設的 "all"）
         initFilters();
+
+        // 💡 修正二：解決中文日期在各瀏覽器解析不一的問題，利用試算表本身的行數（id）來做最安全的「新到舊」排序
+        // 行數（id）越大代表越晚填寫，直接倒序排列就是最新到最舊
+        postcardData.sort((a, b) => b.id - a.id);
+
+        // 💡 修正三：直接執行你原本的篩選與渲染函式，這時因為選單都是 all，就會自動把最新排好的卡片全部秀在首頁了！
         filterAndRender(); 
       })
       .catch(error => {
@@ -532,9 +540,10 @@ function initFilters() {
       });
   });
 
-  // ⚠️ 注意提示：請將你原本檔案中殘留的以下這段舊程式碼刪除或蓋掉，否則會跟上面打架：
+  // ⚠️ 貼心提醒：請再次確認，你的檔案中絕對沒有殘留這段程式碼，有的話請刪除：
   // window.onload = function() { ... };
 </script>
+
 	
 </body>
 </html>
