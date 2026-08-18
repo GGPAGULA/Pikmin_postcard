@@ -336,7 +336,7 @@
 let postcardData = [];
 
 // 2. 你的 Google Sheet 轉接網址
-const gasUrl = 'https://script.google.com/macros/s/AKfycbzX2gywI_rA3M6mZjOPXhRYPOI1NE0aQQclST4FY_nFEde_eZTget6TXKMXpuHl3C6j/exec';
+const gasUrl = 'https://script.google.com/macros/s/AKfycbz4L6uh6xihaU4k350w_bMLzgpW4NcJyvrj5Sz0d2-igRjbMMOsvSTKGqUdUBEPEFNv/exec';
 
 // 3. 當網頁一打開，立刻去抓取 Google Sheet 資料
 window.addEventListener('DOMContentLoaded', () => {
@@ -513,59 +513,187 @@ const cardHTML = `
             filterAndRender(); // 預設依據最新時間排序並完整顯示
         };
 
-  // ==================== 解決首頁空白與排序問題的最終版 ====================
+// ==================== PAGULA美片倉庫 終極整合完全體 ====================
 
-  // 1. 你的 Google Sheet 轉接網址
-  const googleSheetUrl = 'https://script.google.com/macros/s/AKfycbzX2gywI_rA3M6mZjOPXhRYPOI1NE0aQQclST4FY_nFEde_eZTget6TXKMXpuHl3C6j/exec';
+// 1. 宣告一個全域變數，用來存放從雲端抓下來的即時資料
+let postcardData = [];
 
-  // 2. 網頁開啟時，自動執行串接
-  window.addEventListener('DOMContentLoaded', () => {
-    
+// 2. 你的 Google Sheet 轉接網址
+const googleSheetUrl = 'https://script.google.com/macros/s/AKfycbz4L6uh6xihaU4k350w_bMLzgpW4NcJyvrj5Sz0d2-igRjbMMOsvSTKGqUdUBEPEFNv/exec';
+
+// 3. 網頁開啟時，自動執行串接（全網頁只保留這唯一的一組 fetch）
+window.addEventListener('DOMContentLoaded', () => {
     fetch(`${googleSheetUrl}?t=${new Date().getTime()}`, {
-      method: 'GET',
-      mode: 'cors',
-      credentials: 'omit'
+        method: 'GET',
+        mode: 'cors',
+        credentials: 'omit'
     })
-      .then(response => {
-        if (!response.ok) throw new Error('網路回應不成功');
-        return response.json();
-      })
-      .then(rawRows => {
-        // 清空並重新寫入全域變數
-        postcardData = []; 
-        
-        for (let i = 1; i < rawRows.length; i++) {
-          const row = rawRows[i];
-          if (!row[1] && !row[2]) continue; // 略過空白列
+        .then(response => {
+            if (!response.ok) throw new Error('網路回應不成功');
+            return response.json();
+        })
+        .then(rawRows => {
+            // 每次抓資料前先清空陣列，徹底斷絕重複 Bug
+            postcardData = []; 
+            
+            for (let i = 1; i < rawRows.length; i++) {
+                const row = rawRows[i];
+                if (!row && !row) continue; // 略過空白列
 
-          // 欄位名稱精準對接你的 filterAndRender()
-          postcardData.push({
-            id: i,
-            timestamp: row[0],
-            type: row[1],        // item.type
-            author: row[2],      // item.author
-            coords: row[3],      // item.coords
-            geo: row[4],         // item.geo
-            hashtags: row[5] ? row[5].split(',').map(t => t.trim()) : [], // item.hashtags
-            beautyScore: Number(row[6]) || 1, 
-            hideScore: Number(row[7]) || 1,   
-            image: row[9] || 'https://placehold.co'
-          });
-        } // for 迴圈結束
+                // 將 Google Sheet 的各個欄位，精準對應成你的網頁欄位名稱
+                postcardData.push({
+                    id: i,
+                    timestamp: row,   // A欄: 時間戳記
+                    type: row,        // B欄: 類別 (菇點/花點/探測器)
+                    author: row,      // C欄: 上傳者
+                    coords: row,      // D欄: 座標
+                    geo: row,         // E欄: 地區
+                    hashtags: row ? row.split(',').map(t => t.trim()) : [], // F欄: 用逗號拆開標籤並清除空格
+                    beautyScore: Number(row) || 1, // G欄: 美片程度
+                    hideScore: Number(row) || 1,   // H欄: 隱菇程度
+                    // 🎯 核心修復：直接讀取你在試算表 J 欄 (第10欄 row) 用公式算好的手機通用直連網址！
+                    image: row || 'https://placehold.co'
+                });
+            }
 
-        console.log("成功自動串接 Google Sheet 資料並轉換完成：", postcardData);
+            console.log("成功自動串接 Google Sheet 資料並轉換完成：", postcardData);
 
-        // 💡 關鍵：先利用 id 橫列數將資料由新到舊倒序排列，再進行渲染
-        postcardData.sort((a, b) => b.id - a.id);
+            // 💡 排序核心：利用橫列 id 將資料由新到舊倒序排列，讓最新明信片自動衝到首頁最上方！
+            postcardData.sort((a, b) => b.id - a.id);
 
-        // 初始化選單並繪製卡片
-        initFilters();
-        filterAndRender(); 
-      })
-      .catch(error => {
-        console.error('串接失敗，請檢查網址或權限：', error);
-      });
-  });
+            // 資料安全到齊且排序好後，正式啟動選單初始化與卡片渲染
+            initFilters();
+            filterAndRender(); 
+        })
+        .catch(error => {
+            console.error('抓取資料失敗:', error);
+        });
+});
+
+// 動態初始化下拉選單選項 (地區與 Hashtag) - 維持你原本的邏輯
+function initFilters() {
+    const geoSelect = document.getElementById('geoFilter');
+    const tagSelect = document.getElementById('tagFilter');
+    
+    geoSelect.innerHTML = '<option value="all">🌍 地區</option>';
+    tagSelect.innerHTML = '<option value="all">🏷️ #Hashtag</option>';
+    
+    const geos = new Set();
+    const tags = new Set();
+
+    postcardData.forEach(item => {
+        if(item.geo) geos.add(item.geo);
+        if(item.hashtags) item.hashtags.forEach(t => tags.add(t));
+    });
+
+    geos.forEach(geo => {
+        const opt = document.createElement('option');
+        opt.value = geo;
+        opt.textContent = geo;
+        geoSelect.appendChild(opt);
+    });
+
+    tags.forEach(tag => {
+        const opt = document.createElement('option');
+        opt.value = tag;
+        opt.textContent = tag;
+        tagSelect.appendChild(opt);
+    });
+}
+
+// 複製座標至剪貼簿的功能
+function copyCoords(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        const toast = document.getElementById('toast');
+        toast.classList.add('show');
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 2000);
+    });
+}
+
+// 主要篩選、排序與渲染邏輯
+function filterAndRender() {
+    const geoValue = document.getElementById('geoFilter').value;
+    const typeValue = document.getElementById('typeFilter').value;
+    const tagValue = document.getElementById('tagFilter').value;
+    const sortValue = document.getElementById('displaySort').value;
+
+    // 1. 篩選資料
+    let filtered = postcardData.filter(item => {
+        const matchGeo = (geoValue === 'all' || item.geo === geoValue);
+        const matchType = (typeValue === 'all' || item.type === typeValue);
+        const matchTag = (tagValue === 'all' || (item.hashtags && item.hashtags.includes(tagValue)));
+        return matchGeo && matchType && matchTag;
+    });
+
+    // 2. 執行排序
+    filtered.sort((a, b) => {
+        // 安全解析日期，若為 id 排序或自訂排序則分流
+        if (sortValue === 'time-desc') {
+            return b.id - a.id; // 新到舊 (利用穩固的 id 倒序)
+        } else if (sortValue === 'time-asc') {
+            return a.id - b.id; // 舊到新
+        } else if (sortValue === 'hide-asc') {
+            return a.hideScore - b.hideScore; // 隱菇 1-3
+        } else if (sortValue === 'hide-desc') {
+            return b.hideScore - a.hideScore; // 隱菇 3-1
+        } else if (sortValue === 'beauty-asc') {
+            return a.beautyScore - b.beautyScore; // 美菇 1-3
+        } else if (sortValue === 'beauty-desc') {
+            return b.beautyScore - a.beautyScore; // 美菇 3-1
+        }
+        return 0;
+    });
+
+    // 3. 渲染至畫面上
+    const gallery = document.getElementById('gallery');
+    
+    // 💡 關鍵修正：在畫卡片前，必須先將畫面上原本的舊假卡片全面清空！
+    gallery.innerHTML = '';
+
+    filtered.forEach(item => {
+        // 根據類別給予對應的 CSS class
+        let badgeClass = 'type-detector';
+        if(item.type === '菇點') badgeClass = 'type-mushroom';
+        if(item.type === '花點') badgeClass = 'type-flower';
+
+        const cardHTML = `
+            <div class="postcard-card">
+                <div class="pin">📌</div>
+                <div class="card-image-wrapper">
+                    <!-- 🎯 圖片加速優化：加上懶載入 loading="lazy" 與非同步解碼 -->
+                    <img class="card-image" 
+                         src="${item.image}" 
+                         alt="明信片" 
+                         loading="lazy" 
+                         decoding="async"
+                         onerror="this.src='https://placehold.co'">
+                </div>
+                <div class="card-content">
+                    <div class="card-meta-row">
+                        <span class="type-badge ${badgeClass}">${item.type}</span>
+                        <span class="author-geo">${item.geo} • ${item.author}</span>
+                    </div>
+                    
+                    <div class="coords-capsule" onclick="copyCoords('${item.coords}')">
+                        <span class="icon-pin">📍</span>
+                        <span class="coords-text">${item.coords}</span>
+                        <span class="icon-copy">📋</span>
+                    </div>
+
+                    <div class="hashtag-text">${item.hashtags ? item.hashtags.map(t => `#${t.replace('#','')}`).join(' ') : ''}</div>
+                    
+                    <div class="scores-row">
+                        <div class="score-item">🍄 隱菇: ${item.hideScore}</div>
+                        <div class="score-item">✨ 美菇: ${item.beautyScore}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+        gallery.innerHTML += cardHTML;
+    });
+}
 </script>
 	
 </body>
