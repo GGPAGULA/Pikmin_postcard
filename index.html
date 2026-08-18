@@ -331,62 +331,78 @@
         Gennyouknow © 2026
     </footer>
 
-    <script>
-// 1. 宣告全域變數，存放雲端抓下來的即時資料
+<script>
 let postcardData = [];
 
-// 2. 你的 Google Sheet 轉接網址
+// 這是你的 Apps Script 網址，請確認這是「網頁應用程式網址」結尾要是 /exec
 const gasUrl = 'https://script.google.com/macros/s/AKfycbz4L6uh6xihaU4k350w_bMLzgpW4NcJyvrj5Sz0d2-igRjbMMOsvSTKGqUdUBEPEFNv/exec';
 
-// 3. 網頁開啟時，自動去抓取資料
 window.addEventListener('DOMContentLoaded', () => {
-    // 加上時間戳記避免瀏覽器快取舊資料
+    const gallery = document.getElementById('gallery');
+    
+    // 在畫面載入時先顯示提示文字
+    gallery.innerHTML = '<h3 style="text-align:center; width:100%; color:#2b7a78;">資料載入中，請稍候... ⏳</h3>';
+
     fetch(`${gasUrl}?t=${new Date().getTime()}`)
         .then(response => {
-            if (!response.ok) throw new Error('網路回應不成功');
-            return response.json();
+            if (!response.ok) throw new Error('網路狀態異常 (狀態碼: ' + response.status + ')');
+            return response.text(); // 先以純文字接收，用來排查是不是收到奇怪的網頁代碼
         })
-        .then(rawRows => {
-            postcardData = []; // 每次抓資料前先清空陣列
+        .then(text => {
+            try {
+                const rawRows = JSON.parse(text);
+                postcardData = []; 
 
-            // rawRows[0] 是標題列，從 i = 1 開始抓取資料
-            for (let i = 1; i < rawRows.length; i++) {
-                const row = rawRows[i];
-                // 如果該列沒有類別(B欄)和上傳者(C欄)，則視為空白列跳過
-                if (!row || (!row[1] && !row[2])) continue;
+                for (let i = 1; i < rawRows.length; i++) {
+                    const row = rawRows[i];
+                    if (!row || (!row[1] && !row[2])) continue;
 
-                postcardData.push({
-                    id: i,
-                    timestamp: row[0],   // A欄: 時間戳記
-                    type: row[1],        // B欄: 類別 (菇點/花點/探測器)
-                    author: row[2],      // C欄: 上傳者
-                    coords: row[3],      // D欄: 座標
-                    geo: row[4],         // E欄: 地區
-                    // F欄: 處理標籤，預防空白
-                    hashtags: row[5] ? row[5].toString().split(',').map(t => t.trim()).filter(t => t) : [], 
-                    beautyScore: Number(row[6]) || 1, // G欄: 美片程度
-                    hideScore: Number(row[7]) || 1,   // H欄: 隱菇程度
-                    // I欄或J欄: 圖片網址 (依據你的註解，如果J欄(row[9])有直連網址優先用，否則用I欄(row[8])轉換)
-                    image: row[9] || (row[8] ? row[8].replace('open?id=', 'uc?export=view&id=').replace('file/d/', 'uc?export=view&id=').replace('/view?usp=drivesdk', '') : 'https://placehold.co')
-                });
+                    postcardData.push({
+                        id: i,
+                        timestamp: row[0],   
+                        type: row[1],        
+                        author: row[2],      
+                        coords: row[3],      
+                        geo: row[4],         
+                        hashtags: row[5] ? row[5].toString().split(',').map(t => t.trim()).filter(t => t) : [], 
+                        beautyScore: Number(row[6]) || 1, 
+                        hideScore: Number(row[7]) || 1,   
+                        image: row[9] || (row[8] ? row[8].replace('open?id=', 'uc?export=view&id=').replace('file/d/', 'uc?export=view&id=').replace('/view?usp=drivesdk', '') : 'https://placehold.co')
+                    });
+                }
+
+                if(postcardData.length === 0) {
+                    gallery.innerHTML = '<h3 style="text-align:center; width:100%; color:#ff9233;">連線成功，但沒有抓到有效的明信片資料。<br>請檢查試算表 B 欄(類別)或 C 欄(上傳者)是否有內容。</h3>';
+                    return;
+                }
+
+                postcardData.sort((a, b) => b.id - a.id);
+                initFilters();
+                filterAndRender(); 
+
+            } catch (err) {
+                // 如果解析 JSON 失敗，通常是權限問題或網址錯誤
+                throw new Error('資料格式錯誤 (無法解析 JSON)。<br>這通常代表 Apps Script 權限沒有設為「所有人」，或者 gasUrl 填成了試算表網址。<br><br>回傳的內容片段：' + text.substring(0, 100));
             }
-
-            console.log("成功載入資料：", postcardData);
-
-            // 利用橫列 id 將資料由新到舊倒序排列，最新明信片會在最上方
-            postcardData.sort((a, b) => b.id - a.id);
-
-            // 資料轉換完成後，啟動選單與畫面渲染
-            initFilters();
-            filterAndRender(); 
         })
         .catch(error => {
-            console.error('抓取資料失敗:', error);
-            document.getElementById('gallery').innerHTML = '<p style="text-align:center; width:100%;">資料載入失敗，請檢查網址或稍後再試。</p>';
+            // ★ 將錯誤訊息直接顯示在手機畫面上！
+            gallery.innerHTML = `
+                <div style="background: white; border: 3px dashed #ff5959; border-radius: 12px; padding: 20px; margin: 20px auto; max-width: 90%;">
+                    <h3 style="color: #ff5959; margin-top:0;">🚨 抓蟲偵測器：發生錯誤啦！</h3>
+                    <p><strong>請將以下這段資訊截圖，或根據提示修正：</strong></p>
+                    <p style="word-break: break-all; color: #333; background: #fdfbf7; padding: 12px; border-radius: 8px; font-weight: bold;">${error.message}</p>
+                    <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+                    <p style="font-size: 13px; color: #666; line-height: 1.5;">
+                    💡 <strong>常見原因對照表：</strong><br>
+                    1. 若顯示 <strong>"Failed to fetch"</strong>：Apps Script 部署時「誰可以存取」忘記選「所有人」。<br>
+                    2. 若顯示 <strong>"資料格式錯誤"</strong>：代表你的 <code>gasUrl</code> 填到了預設的 Google 網頁，而不是專案代碼。
+                    </p>
+                </div>
+            `;
         });
 });
 
-// 初始化下拉選單選項 (地區與 Hashtag)
 function initFilters() {
     const geoSelect = document.getElementById('geoFilter');
     const tagSelect = document.getElementById('tagFilter');
@@ -417,7 +433,6 @@ function initFilters() {
     });
 }
 
-// 複製座標至剪貼簿
 function copyCoords(text) {
     navigator.clipboard.writeText(text).then(() => {
         const toast = document.getElementById('toast');
@@ -428,14 +443,12 @@ function copyCoords(text) {
     });
 }
 
-// 主要篩選、排序與渲染邏輯
 function filterAndRender() {
     const geoValue = document.getElementById('geoFilter').value;
     const typeValue = document.getElementById('typeFilter').value;
     const tagValue = document.getElementById('tagFilter').value;
     const sortValue = document.getElementById('displaySort').value;
 
-    // 1. 篩選資料
     let filtered = postcardData.filter(item => {
         const matchGeo = (geoValue === 'all' || item.geo === geoValue);
         const matchType = (typeValue === 'all' || item.type === typeValue);
@@ -443,35 +456,24 @@ function filterAndRender() {
         return matchGeo && matchType && matchTag;
     });
 
-    // 2. 執行排序
     filtered.sort((a, b) => {
-        if (sortValue === 'time-desc') {
-            return b.id - a.id; // 新到舊
-        } else if (sortValue === 'time-asc') {
-            return a.id - b.id; // 舊到新
-        } else if (sortValue === 'hide-asc') {
-            return a.hideScore - b.hideScore; // 隱菇 1-3
-        } else if (sortValue === 'hide-desc') {
-            return b.hideScore - a.hideScore; // 隱菇 3-1
-        } else if (sortValue === 'beauty-asc') {
-            return a.beautyScore - b.beautyScore; // 美菇 1-3
-        } else if (sortValue === 'beauty-desc') {
-            return b.beautyScore - a.beautyScore; // 美菇 3-1
-        }
+        if (sortValue === 'time-desc') return b.id - a.id; 
+        if (sortValue === 'time-asc') return a.id - b.id; 
+        if (sortValue === 'hide-asc') return a.hideScore - b.hideScore; 
+        if (sortValue === 'hide-desc') return b.hideScore - a.hideScore; 
+        if (sortValue === 'beauty-asc') return a.beautyScore - b.beautyScore; 
+        if (sortValue === 'beauty-desc') return b.beautyScore - a.beautyScore; 
         return 0;
     });
 
-    // 3. 渲染至畫面上
     const gallery = document.getElementById('gallery');
-    gallery.innerHTML = ''; // 渲染前先清空畫面
+    gallery.innerHTML = ''; 
 
     filtered.forEach(item => {
-        // 根據類別給予對應的 CSS class
         let badgeClass = 'type-detector';
         if(item.type === '菇點') badgeClass = 'type-mushroom';
         if(item.type === '花點') badgeClass = 'type-flower';
 
-        // 確保 hashtag 顯示時帶有 # 符號
         let hashText = item.hashtags ? item.hashtags.map(t => t.startsWith('#') ? t : `#${t}`).join(' ') : '';
 
         const cardHTML = `
@@ -509,3 +511,5 @@ function filterAndRender() {
         gallery.innerHTML += cardHTML;
     });
 }
+</script>
+
