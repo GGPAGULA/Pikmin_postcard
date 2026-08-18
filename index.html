@@ -509,6 +509,67 @@ function initFilters() {
           if (!row[1] && !row[2]) continue; // 略過空白列
 
           // 欄位名稱精準對接你的 filterAndRender()
+          postcardData.push({
+            id: i,
+            timestamp: row[0],
+            type: row[1],        // item.type
+            author: row[2],      // item.author
+            coords: row[3],      // item.coords
+            geo: row[4],         // item.geo
+            hashtags: row[5] ? row[5].split(',').map(t => t.trim()) : [], // item.hashtags
+            beautyScore: Number(row[6]) || 1, 
+            hideScore: Number(row[7]) || 1,   
+            image: (() => {
+              if (!row[8]) return 'https://placehold.co';
+              const match = row[8].match(/[-\w]{25,}/);
+              if (match && match[0]) {
+                // 🎯 成功繞過手機阻擋的隱藏直連格式
+                return `https://google.com{match[0]}`;
+              }
+              return row[8];
+            })() // 括號閉合正確
+          });
+        } // for 迴圈結束
+
+        console.log("成功自動串接 Google Sheet 資料並轉換完成：", postcardData);
+
+        // 💡 關鍵：先利用 id 橫列數將資料由新到舊倒序排列，再進行渲染
+        postcardData.sort((a, b) => b.id - a.id);
+
+        // 初始化選單並繪製卡片
+        initFilters();
+        filterAndRender(); 
+      })
+      .catch(error => {
+        console.error('串接失敗，請檢查網址或權限：', error);
+      });
+  });
+</script>
+	
+</body>
+</html>
+
+  // 2. 網頁開啟時，自動執行串接
+  window.addEventListener('DOMContentLoaded', () => {
+    
+    fetch(`${googleSheetUrl}?t=${new Date().getTime()}`, {
+      method: 'GET',
+      mode: 'cors',
+      credentials: 'omit'
+    })
+      .then(response => {
+        if (!response.ok) throw new Error('網路回應不成功');
+        return response.json();
+      })
+      .then(rawRows => {
+        // 清空並重新寫入全域變數
+        postcardData = []; 
+        
+        for (let i = 1; i < rawRows.length; i++) {
+          const row = rawRows[i];
+          if (!row[1] && !row[2]) continue; // 略過空白列
+
+          // 欄位名稱精準對接你的 filterAndRender()
           // 💡 直接複製這整段覆蓋原本的 postcardData.push 區塊：
           postcardData.push({
             id: i,
