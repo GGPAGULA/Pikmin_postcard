@@ -358,9 +358,9 @@ function initFilters() {
     const geoSelect = document.getElementById('geoFilter');
     const tagSelect = document.getElementById('tagFilter');
     
-    // 清空原本寫死的預設選項（保留第一個"所有地區"和"所有Hashtag"即可）
-    geoSelect.innerHTML = '<option value="">🌍 所有地區</option>';
-    tagSelect.innerHTML = '<option value="">🏷 所有 Hashtag</option>';
+    // 💡 關鍵：這裡的預設選項 value 一定要寫 "all"
+    geoSelect.innerHTML = '<option value="all">🌍 所有地區</option>';
+    tagSelect.innerHTML = '<option value="all">🏷️ 所有 Hashtag</option>';
     
     const geos = new Set();
     const tags = new Set();
@@ -384,6 +384,7 @@ function initFilters() {
         tagSelect.appendChild(opt);
     });
 }
+
 
         // 複製座標至剪貼簿的功能
         function copyCoords(text) {
@@ -482,13 +483,12 @@ function initFilters() {
             filterAndRender(); // 預設依據最新時間排序並完整顯示
         };
 
-  // 1. 這就是你的 Google Sheet 轉接網址
-  const googleSheetUrl = 'https://script.google.com/macros/s/AKfycbzz4ed0U-MnutSVh0Hita8zpArJ-HzLCnX5C2tg00FeGg3iFMVW4XqoKNSqczZHG18M/exec';
+ // 1. 你的 Google Sheet 轉接網址
+  const googleSheetUrl = 'https://google.com';
 
   // 2. 網頁開啟時，自動執行串接
   window.addEventListener('DOMContentLoaded', () => {
     
-    // 💡 優化：在網址後面加上隨機時間戳記（?t=...），打破瀏覽器的逾時和壞快取紀錄
     fetch(`${googleSheetUrl}?t=${new Date().getTime()}`, {
       method: 'GET',
       mode: 'cors',
@@ -499,40 +499,42 @@ function initFilters() {
         return response.json();
       })
       .then(rawRows => {
-        // 成功抓到資料，將資料轉換為前端物件
-        const postcards = [];
+        // 清空並重新寫入全域變數
+        postcardData = []; 
+        
         for (let i = 1; i < rawRows.length; i++) {
           const row = rawRows[i];
           if (!row[1] && !row[2]) continue; // 略過空白列
 
-          postcards.push({
-            id: i, // 新增一個 id 方便你的網站辨識
+          // 欄位名稱精準對接你的 filterAndRender()
+          postcardData.push({
+            id: i,
             timestamp: row[0],
-            category: row[1],
-            uploader: row[2],
-            coordinates: row[3],
-            region: row[4],
-            hashtag: row[5] ? row[5].split(',').map(t => t.trim()) : [], // 順便幫你把空格修乾淨
-            score1: Number(row[6]) || 1, // 轉換成純數字，方便你做分數排序
-            score2: Number(row[7]) || 1, // 轉換成純數字
-            fileUrl: row[8]
+            type: row[1],        // item.type
+            author: row[2],      // item.author
+            coords: row[3],      // item.coords
+            geo: row[4],         // item.geo
+            hashtags: row[5] ? row[5].split(',').map(t => t.trim()) : [], // item.hashtags
+            beautyScore: Number(row[6]) || 1, 
+            hideScore: Number(row[7]) || 1,   
+            image: row[8] || 'https://placehold.co' // item.image
           });
         }
 
-        // 3. 在瀏覽器 Console 查看是否成功抓到
-        console.log("成功自動串接 Google Sheet 資料：", postcards);
+        console.log("成功自動串接 Google Sheet 資料並轉換完成：", postcardData);
 
-        // 💡 關鍵：資料抓完後，在這裡啟動你原本網頁用來「畫出選單」和「產出卡片」的函式
-        // 請確認你網頁本來的函式名稱是不是這兩個，如果是的話，這裡就會自動幫你畫在畫面上囉！
+        // 💡 關鍵順序：資料確保到齊後，才開始初始化選單並渲染畫面
         initFilters();
-        renderCards(postcards); 
+        filterAndRender(); 
       })
       .catch(error => {
         console.error('串接失敗，請檢查網址或權限：', error);
       });
   });
+
+  // ⚠️ 注意提示：請將你原本檔案中殘留的以下這段舊程式碼刪除或蓋掉，否則會跟上面打架：
+  // window.onload = function() { ... };
 </script>
-	
 	
 </body>
 </html>
